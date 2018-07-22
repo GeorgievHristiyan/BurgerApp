@@ -4,8 +4,12 @@
 /* eslint-env browser */
 
 var mongoose = require('mongoose');
+var autoIncrement = require('mongoose-auto-increment');
 
-var burgerSchema =({
+
+autoIncrement.initialize(mongoose);
+
+var burgerSchema = new mongoose.Schema({
     burgerName: {
         type: String,
         required: true,
@@ -60,16 +64,11 @@ var burgerSchema =({
     ]
 });
 
+burgerSchema.plugin(autoIncrement.plugin, 'Burger');
+
+
 var Burger = mongoose.model('Burger', burgerSchema);
 
 module.exports = {Burger};
 
 
-//{
-//    burgerName: {
-//        type: String,
-//        required: true,
-//        trim: true,
-//        minlenght: 3
-//    }
-//}

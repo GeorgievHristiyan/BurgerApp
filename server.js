@@ -29,8 +29,9 @@ app.use(limit ({
 }));
 
 //Create burger
-app.post('/createBurger', async (req, res) => {
+app.post('/burger', async (req, res) => {
     var newBurger;
+    var doc;
     try {
         
         newBurger = new Burger({
@@ -53,8 +54,7 @@ app.post('/createBurger', async (req, res) => {
             }]
         });
 
-
-        var doc = await newBurger.save();
+        doc = await newBurger.save();
         res.send({doc});
     } catch (e) {
        res.status(400).send(e); 
@@ -62,9 +62,9 @@ app.post('/createBurger', async (req, res) => {
 });
 
 //Fetch all burgers
-app.get('/all', async(req, res) => {
-
-    //ex - http://localhost:3000/all?limit=2&page=4
+app.get('/burgers', async(req, res) => {
+    var pageCount;
+    
     try{
     
         var [results, burgerCount] = await Promise.all([
@@ -72,7 +72,7 @@ app.get('/all', async(req, res) => {
             Burger.count({})
         ]);
 
-        var pageCount = Math.ceil(burgerCount / req.query.limit);
+        pageCount = Math.ceil(burgerCount / req.query.limit);
 
         res.send({
         has_more_pages: paginate.hasNextPages(req)(pageCount),
@@ -83,21 +83,35 @@ app.get('/all', async(req, res) => {
         res.send(err);
     }
      
-    /*var allBurgers = await Burger.find();
-    
-    res.send({allBurgers});*/
 });
 
-//Fetch one by name
-app.get('/getone/:name', async(req, res) => { // Това тук защо по дяволите не работи?!?!?!
+//fetch all burgers by Id
+app.get('/burger/:id', async(req, res) => { 
     var doc;
-    var burgerName = req.params.name;
+    var id = req.params.id;
 
     try {
-        doc = await Burger.findOne({burgerName});
+        doc = await Burger.findById(id);
         if (!doc) {
             return res.status(404).send();
         }
+        return res.send({doc});
+    } catch(e) {
+        res.status(400).send(e.message);
+    }
+    
+});
+
+//fetch random burger
+app.get('/random/', async(req, res) => {
+    var doc;
+    var burgersCount;
+    var random;
+    
+    try {
+        burgersCount = await Burger.count();
+        random = Math.floor(Math.random() * burgersCount);
+        doc = await Burger.findById(random);
         res.send({doc});
     } catch(e) {
         res.status(400).send(e.message);
@@ -105,9 +119,8 @@ app.get('/getone/:name', async(req, res) => { // Това тук защо по �
     
 });
 
-
-//Fetch All with this name
-app.get('/getallbyname/:name', async(req, res) => {
+//Fetch All burgers with this name
+app.get('/burgerName/:name', async(req, res) => {
     var doc;
     var burgerName = req.params.name;
     
@@ -126,17 +139,17 @@ app.get('/getallbyname/:name', async(req, res) => {
         });  
     
     } catch(e) {
-        res.send(e);
+        res.status(404).send(e);
     } 
     
 });
 
 //Delete burger
-app.delete('/delete/:name', async(req, res) => {
-    var burgerName = req.params.name;
+app.delete('/delete/:id', async(req, res) => {
+    var id = req.params.id;
     
     try {
-        var doc = await Burger.findOneAndRemove({burgerName});
+        var doc = await Burger.findByIdAndRemove(id);
         await res.send({doc});
     } catch (e) {
         res.status(400).send();  
@@ -146,9 +159,8 @@ app.delete('/delete/:name', async(req, res) => {
 //Update burger
 app.patch('/update/:name', async(req, res) => {
     var burgerName = req.params.name;
-    
     var body = _.pick(req.body, ['burgerName', 'description', 'potatoes', 'tomatoes', 'frenchFries', 'onion', 'lettuce', 'chicken', 'beef', 'pork']);
-    //var doc = await Burger.findOneAndUpdate(burgerName, {$set: body}, {new: true});
+    
     try{
         var doc = await Burger.findOneAndUpdate({burgerName}, {$set: { 
                                                         burgerName: req.body.burgerName,
@@ -175,16 +187,11 @@ app.patch('/update/:name', async(req, res) => {
         res.status(400).send(e);
     }
     
-    
-    
 });
 
 app.listen(3000, () => {
     console.log('burger app is set on port 3000');
 });
-
-
-
 
 module.exports = {app}; 
 
